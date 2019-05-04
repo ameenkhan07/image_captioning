@@ -258,16 +258,16 @@ class CaptionGenerator(BaseModel):
         # Generate the words one by one
         for idx in range(num_steps):
             # Attention mechanism
-            with tf.variable_scope("attend"):
-                alpha = self.attend(contexts, last_output)
-                context = tf.reduce_sum(contexts*tf.expand_dims(alpha, 2),
-                                        axis = 1)
-                if self.is_train:
-                    tiled_masks = tf.tile(tf.expand_dims(masks[:, idx], 1),
-                                         [1, self.num_ctx])
-                    masked_alpha = alpha * tiled_masks
-                    alphas.append(tf.reshape(masked_alpha, [-1]))
-
+            # with tf.variable_scope("attend"):
+            #     alpha = self.attend(contexts, last_output)
+            #     context = tf.reduce_sum(contexts*tf.expand_dims(alpha, 2),
+            #                             axis = 1)
+            #     if self.is_train:
+            #         tiled_masks = tf.tile(tf.expand_dims(masks[:, idx], 1),
+            #                              [1, self.num_ctx])
+            #         masked_alpha = alpha * tiled_masks
+            #         alphas.append(tf.reshape(masked_alpha, [-1]))
+            context = tf.reduce_sum(contexts, axis = 1)
             # Embed the last word
             with tf.variable_scope("word_embedding"):
                 word_embed = tf.nn.embedding_lookup(embedding_matrix,
@@ -317,17 +317,18 @@ class CaptionGenerator(BaseModel):
             cross_entropy_loss = tf.reduce_sum(cross_entropies) \
                                  / tf.reduce_sum(masks)
 
-            alphas = tf.stack(alphas, axis = 1)
-            alphas = tf.reshape(alphas, [config.batch_size, self.num_ctx, -1])
-            attentions = tf.reduce_sum(alphas, axis = 2)
-            diffs = tf.ones_like(attentions) - attentions
-            attention_loss = config.attention_loss_factor \
-                             * tf.nn.l2_loss(diffs) \
-                             / (config.batch_size * self.num_ctx)
+            # alphas = tf.stack(alphas, axis = 1)
+            # alphas = tf.reshape(alphas, [config.batch_size, self.num_ctx, -1])
+            # attentions = tf.reduce_sum(alphas, axis = 2)
+            # diffs = tf.ones_like(attentions) - attentions
+            # attention_loss = config.attention_loss_factor \
+            #                  * tf.nn.l2_loss(diffs) \
+            #                  / (config.batch_size * self.num_ctx)
 
             reg_loss = tf.losses.get_regularization_loss()
 
-            total_loss = cross_entropy_loss + attention_loss + reg_loss
+            # total_loss = cross_entropy_loss + attention_loss + reg_loss
+            total_loss = cross_entropy_loss + reg_loss
 
             predictions_correct = tf.stack(predictions_correct, axis = 1)
             accuracy = tf.reduce_sum(predictions_correct) \
@@ -339,10 +340,10 @@ class CaptionGenerator(BaseModel):
             self.masks = masks
             self.total_loss = total_loss
             self.cross_entropy_loss = cross_entropy_loss
-            self.attention_loss = attention_loss
+            # self.attention_loss = attention_loss
             self.reg_loss = reg_loss
             self.accuracy = accuracy
-            self.attentions = attentions
+            # self.attentions = attentions
         else:
             self.initial_memory = initial_memory
             self.initial_output = initial_output
@@ -521,13 +522,13 @@ class CaptionGenerator(BaseModel):
 
         with tf.name_scope("metrics"):
             tf.summary.scalar("cross_entropy_loss", self.cross_entropy_loss)
-            tf.summary.scalar("attention_loss", self.attention_loss)
+            # tf.summary.scalar("attention_loss", self.attention_loss)
             tf.summary.scalar("reg_loss", self.reg_loss)
             tf.summary.scalar("total_loss", self.total_loss)
             tf.summary.scalar("accuracy", self.accuracy)
 
-        with tf.name_scope("attentions"):
-            self.variable_summary(self.attentions)
+        # with tf.name_scope("attentions"):
+        #     self.variable_summary(self.attentions)
 
         self.summary = tf.summary.merge_all()
 
