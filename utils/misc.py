@@ -1,7 +1,7 @@
-
 import numpy as np
 import cv2
 import heapq
+
 
 class ImageLoader(object):
     def __init__(self, mean_file):
@@ -22,8 +22,10 @@ class ImageLoader(object):
         image = cv2.resize(image, (self.scale_shape[0], self.scale_shape[1]))
         offset = (self.scale_shape - self.crop_shape) / 2
         offset = offset.astype(np.int32)
-        image = image[offset[0]:offset[0]+self.crop_shape[0],
-                      offset[1]:offset[1]+self.crop_shape[1]]
+        image = image[
+            offset[0] : offset[0] + self.crop_shape[0],
+            offset[1] : offset[1] + self.crop_shape[1],
+        ]
         image = image - self.mean
         return image
 
@@ -35,12 +37,13 @@ class ImageLoader(object):
         images = np.array(images, np.float32)
         return images
 
+
 class CaptionData(object):
     def __init__(self, sentence, memory, output, score):
-       self.sentence = sentence
-       self.memory = memory
-       self.output = output
-       self.score = score
+        self.sentence = sentence
+        self.memory = memory
+        self.output = output
+        self.score = score
 
     def __cmp__(self, other):
         assert isinstance(other, CaptionData)
@@ -58,6 +61,7 @@ class CaptionData(object):
     def __eq__(self, other):
         assert isinstance(other, CaptionData)
         return self.score == other.score
+
 
 class TopN(object):
     def __init__(self, n):
